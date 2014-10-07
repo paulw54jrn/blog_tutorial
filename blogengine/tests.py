@@ -1,7 +1,10 @@
 import markdown
 from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
+from django.contrib.flatpages.models import FlatPage
+from django.contrib.sites.models import Site
 from blogengine.models import Post
+
 
 class PostTest(TestCase):
     def test_create_post(self):
@@ -26,11 +29,12 @@ class PostTest(TestCase):
         self.assertEqual(p.text,text)
         self.assertEqual(p.pub_date,pub_date)
 
-class AdminTest(LiveServerTestCase):
-    fixtures = ['users.json']
-
+class BaseAcceptanceTest(LiveServerTestCase):
     def setUp(self):
         self.client = Client()
+
+class AdminTest(BaseAcceptanceTest):
+    fixtures = ['users.json']
 
     def test_login_and_logout(self):
 
@@ -113,10 +117,7 @@ class AdminTest(LiveServerTestCase):
         self.assertEquals(r.status_code,200)
         self.assertEqual(len(Post.objects.all()),0)
 
-class PostViewTest(LiveServerTestCase):
-    def setUp(self):
-        self.client = Client()
-
+class PostViewTest(BaseAcceptanceTest):
     def test_index(self):
         post = Post()
         post.title = 'first post'
