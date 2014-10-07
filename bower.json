@@ -4,15 +4,7 @@
   "authors": [
     "paulw54jrn <paul.jinliliang@gmail.com>"
   ],
-  "moduleType": [
-    "amd",
-    "es6",
-    "globals",
-    "node",
-    "yui"
-  ],
   "license": "MIT",
-  "private": true,
   "ignore": [
     "**/.*",
     "node_modules",
@@ -20,5 +12,9 @@
     "blogengine/static/bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "bootstrap": "~3.2.0",
+    "html5-boilerplate": "~4.3.0"
+  }
 }
