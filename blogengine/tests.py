@@ -4,14 +4,34 @@ from django.utils import timezone
 from django.contrib.flatpages.models import FlatPage
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
-from blogengine.models import Post
+from blogengine.models import Post, Category
 
 
 class PostTest(TestCase):
+
+    def test_create_category(self):
+        category = Category()
+
+        category.name = 'python'
+        category.description = 'the python programming language'
+        category.save()
+
+        self.assertEquals(len(Category.objects.all()),1)
+        self.assertEquals(Category.objects.all()[0],category)
+        c = Category.objects.all()[0]
+        self.assertEquals(c.name,category.name)
+        self.assertEqual(c.description,category.description)
+
     def test_create_post(self):
         #create author
         author = User.objects.create_user('testuser','user@example.com','password')
         author.save()
+
+        #create Category
+        cat = Category()
+        cat.name = 'python'
+        cat.description = 'python'
+        cat.save()
 
         post = Post()
 
@@ -24,6 +44,7 @@ class PostTest(TestCase):
         post.title = title
         post.slug = 'first-post'
         post.author = author
+        post.category = cat
         post.save()
 
         posts = Post.objects.all()
@@ -36,6 +57,8 @@ class PostTest(TestCase):
         self.assertEqual(p.pub_date,pub_date)
         self.assertEquals(p.author.username,author.username)
         self.assertEquals(p.author.email,author.email)
+        self.assertEquals(p.category.name,cat.name)
+        self.assertEquals(p.category.description,cat.description)
 
 class BaseAcceptanceTest(LiveServerTestCase):
     def setUp(self):
@@ -43,6 +66,56 @@ class BaseAcceptanceTest(LiveServerTestCase):
 
 class AdminTest(BaseAcceptanceTest):
     fixtures = ['users.json']
+
+    def test_create_category(self):
+        self.client.login(username='bobsmith',password='password')
+
+        r = self.client.get('/admin/blogengine/category/add/')
+        self.assertEquals(r.status_code,200)
+
+        #create category
+        r = self.client.post('/admin/blogengine/category/add/',{
+            'name':'python',
+            'description':'python'
+        },follow=True)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue('success' in r.content)
+        self.assertEquals(len(Category.objects.all()),1)
+
+    def test_edit_category(self):
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
+        self.client.login(username='bobsmith',password='password')
+        url = '/admin/blogengine/category/%d/' % Category.objects.all()[0].id
+        r = self.client.post(url,{
+            'name':'peee',
+            'description':'asdf'
+        },follow=True)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue( 'success' in r.content)
+        self.assertEquals(len(Category.objects.all()),1)
+        self.assertEquals(Category.objects.all()[0].name,'peee')
+        self.assertEquals(Category.objects.all()[0].description,'asdf')
+
+    def test_delete_category(self):
+        cat = Category()
+        cat.name = 'python'
+        cat.description = 'pytoh'
+        cat.save()
+
+        self.client.login(username='bobsmith',password='password')
+        url = '/admin/blogengine/category/%d/delete/' % Category.objects.all()[0].id
+        r = self.client.post(url,{
+            'post':'yes'
+        },
+        follow=True)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue('success' in r.content)
+        self.assertEquals(len(Category.objects.all()),0)
+
 
     def test_login_and_logout(self):
 
@@ -62,6 +135,14 @@ class AdminTest(BaseAcceptanceTest):
 
 
     def test_create_post(self):
+
+        #create category
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
+
         self.client.login(username='bobsmith',password='password')
 
         response = self.client.get( '/admin/blogengine/post/add/')
@@ -73,6 +154,7 @@ class AdminTest(BaseAcceptanceTest):
             'pub_date_0':'2014-10-07',
             'pub_date_1':'22:00:04',
             'slug':'my-first-test',
+            'category': Category.objects.all()[0].id,
         },
         follow=True)
 
@@ -84,6 +166,12 @@ class AdminTest(BaseAcceptanceTest):
 
 
     def test_edit_post(self):
+        #create category
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
         #create author
         author = User.objects.create_user('testuser','user@example.com','password')
         author.save()
@@ -93,6 +181,7 @@ class AdminTest(BaseAcceptanceTest):
         post.text = 'first blog post'
         post.pub_date = timezone.now()
         post.author = author
+        post.category = category
         post.save()
 
         self.client.login(username='bobsmith',password='password')
@@ -104,10 +193,11 @@ class AdminTest(BaseAcceptanceTest):
             'pub_date_0':'2014-10-9',
             'pub_date_1':'22:00:04',
             'slug':'my-first-test',
+            'category': Category.objects.all()[0].id,
         },follow=True)
 
         self.assertEquals(response.status_code,200)
-        self.assertTrue('changed' in response.content)
+        self.assertTrue('changed successfully' in response.content)
 
         all_posts = Post.objects.all()
         self.assertEquals(len(all_posts),1)
@@ -115,6 +205,12 @@ class AdminTest(BaseAcceptanceTest):
         self.assertEquals(all_posts[0].text,'this is my second post')
 
     def test_delete_post(self):
+        #create category
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
         #create user
         author = User.objects.create_user('testuser','user@example.com','password')
         author.save()
@@ -124,6 +220,7 @@ class AdminTest(BaseAcceptanceTest):
         post.text = 'first text'
         post.pub_date = timezone.now()
         post.author = author
+        post.category = category
         post.save()
 
         self.assertEquals( len(Post.objects.all()) ,1)
@@ -137,6 +234,13 @@ class AdminTest(BaseAcceptanceTest):
 
 class PostViewTest(BaseAcceptanceTest):
     def test_index(self):
+        #create category
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
+
         author = User.objects.create_user('test','test@test.com','test')
         author.save()
 
@@ -145,6 +249,7 @@ class PostViewTest(BaseAcceptanceTest):
         post.text = 'this is [my first blog post](http://localhost:8000/)'
         post.pub_date = timezone.now()
         post.author  = author
+        post.category = category
         post.save()
 
         self.assertEqual(len(Post.objects.all()),1)
@@ -160,6 +265,12 @@ class PostViewTest(BaseAcceptanceTest):
         self.assertTrue('<a href="http://localhost:8000/">my first blog post</a>' in r.content)
 
     def test_post_page(self):
+        #create category
+        category = Category()
+        category.name = 'python'
+        category.descritption = 'python'
+        category.save()
+
         #create author
         author = User.objects.create_user('adsf','asdf@adf.com','asdf')
         author.save()
@@ -171,6 +282,7 @@ class PostViewTest(BaseAcceptanceTest):
         post.pub_date = timezone.now()
         post.slug = 'my-first-post'
         post.author = author
+        post.category = category
         post.save()
 
         self.assertEquals(len(Post.objects.all()),1)

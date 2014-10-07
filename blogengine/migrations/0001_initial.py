@@ -13,6 +13,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='Category',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=200)),
+                ('description', models.TextField()),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='Post',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
@@ -21,6 +32,7 @@ class Migration(migrations.Migration):
                 ('text', models.TextField()),
                 ('slug', models.SlugField(unique=True, max_length=20)),
                 ('author', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('category', models.ForeignKey(blank=True, to='blogengine.Category', null=True)),
             ],
             options={
                 'ordering': ['-pub_date'],
