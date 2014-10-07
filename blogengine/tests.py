@@ -159,3 +159,33 @@ class PostViewTest(BaseAcceptanceTest):
         self.assertTrue( str(post.pub_date.day) in r.content)
         self.assertTrue( '<a href="http://localhost:8000/">first blog post</a>' in r.content)
 
+class FlatPageViewTest(BaseAcceptanceTest):
+
+    def test_create_flat_page(self):
+        page = FlatPage()
+        page.url = '/about/'
+        page.title = 'about me'
+        page.content = 'something about me'
+        page.save()
+
+        page.sites.add(Site.objects.all()[0])
+        page.save()
+
+        all_pages = FlatPage.objects.all()
+        self.assertEquals(len(all_pages),1)
+        self.assertEqual(all_pages[0],page)
+
+        p = all_pages[0]
+        self.assertEquals(p.url,page.url)
+        self.assertEquals(p.title,page.title)
+        self.assertEquals(p.content,page.content)
+
+        p_url = p.get_absolute_url()
+
+        r = self.client.get(p_url)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue(page.title in r.content)
+        self.assertTrue(page.content in r.content)
+
+
+
