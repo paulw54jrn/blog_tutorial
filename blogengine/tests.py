@@ -3,11 +3,16 @@ from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
 from django.contrib.flatpages.models import FlatPage
 from django.contrib.sites.models import Site
+from django.contrib.auth.models import User
 from blogengine.models import Post
 
 
 class PostTest(TestCase):
     def test_create_post(self):
+        #create author
+        author = User.objects.create_user('testuser','user@example.com','password')
+        author.save()
+
         post = Post()
 
         title = "first blog"
@@ -18,6 +23,7 @@ class PostTest(TestCase):
         post.pub_date = pub_date
         post.title = title
         post.slug = 'first-post'
+        post.author = author
         post.save()
 
         posts = Post.objects.all()
@@ -28,6 +34,8 @@ class PostTest(TestCase):
         self.assertEqual(p.title,title)
         self.assertEqual(p.text,text)
         self.assertEqual(p.pub_date,pub_date)
+        self.assertEquals(p.author.username,author.username)
+        self.assertEquals(p.author.email,author.email)
 
 class BaseAcceptanceTest(LiveServerTestCase):
     def setUp(self):
@@ -76,10 +84,15 @@ class AdminTest(BaseAcceptanceTest):
 
 
     def test_edit_post(self):
+        #create author
+        author = User.objects.create_user('testuser','user@example.com','password')
+        author.save()
+
         post = Post()
         post.title = 'My first Post'
         post.text = 'first blog post'
         post.pub_date = timezone.now()
+        post.author = author
         post.save()
 
         self.client.login(username='bobsmith',password='password')
@@ -102,10 +115,15 @@ class AdminTest(BaseAcceptanceTest):
         self.assertEquals(all_posts[0].text,'this is my second post')
 
     def test_delete_post(self):
+        #create user
+        author = User.objects.create_user('testuser','user@example.com','password')
+        author.save()
+
         post = Post()
         post.title = 'first'
         post.text = 'first text'
         post.pub_date = timezone.now()
+        post.author = author
         post.save()
 
         self.assertEquals( len(Post.objects.all()) ,1)
@@ -119,10 +137,14 @@ class AdminTest(BaseAcceptanceTest):
 
 class PostViewTest(BaseAcceptanceTest):
     def test_index(self):
+        author = User.objects.create_user('test','test@test.com','test')
+        author.save()
+
         post = Post()
         post.title = 'first post'
         post.text = 'this is [my first blog post](http://localhost:8000/)'
         post.pub_date = timezone.now()
+        post.author  = author
         post.save()
 
         self.assertEqual(len(Post.objects.all()),1)
@@ -138,11 +160,17 @@ class PostViewTest(BaseAcceptanceTest):
         self.assertTrue('<a href="http://localhost:8000/">my first blog post</a>' in r.content)
 
     def test_post_page(self):
+        #create author
+        author = User.objects.create_user('adsf','asdf@adf.com','asdf')
+        author.save()
+
+
         post = Post()
         post.title = 'my first page'
         post.text = 'This is my [first blog post](http://localhost:8000/)'
         post.pub_date = timezone.now()
         post.slug = 'my-first-post'
+        post.author = author
         post.save()
 
         self.assertEquals(len(Post.objects.all()),1)
