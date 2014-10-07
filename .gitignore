@@ -1,3 +1,5 @@
 /env
 *.pyc
 *.sqlite3
+blogengine/static/bower_components
+
