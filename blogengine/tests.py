@@ -109,4 +109,24 @@ class AdminTest(LiveServerTestCase):
         self.assertEquals(r.status_code,200)
         self.assertEqual(len(Post.objects.all()),0)
 
+class PostViewTest(LiveServerTestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_index(self):
+        post = Post()
+        post.title = 'first post'
+        post.text = 'my first psot'
+        post.pub_date = timezone.now()
+        post.save()
+
+        self.assertEqual(len(Post.objects.all()),1)
+
+        r = self.client.get('/')
+        self.assertEquals(r.status_code,200)
+
+        self.assertTrue( post.title in r.content)
+        self.assertTrue( post.text in r.content)
+        self.assertTrue( str(post.pub_date.year) in r.content)
+        self.assertTrue( str(post.pub_date.day) in r.content)
 
