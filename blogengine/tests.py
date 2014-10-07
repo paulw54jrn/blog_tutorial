@@ -1,3 +1,4 @@
+import markdown
 from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
 from blogengine.models import Post
@@ -116,7 +117,7 @@ class PostViewTest(LiveServerTestCase):
     def test_index(self):
         post = Post()
         post.title = 'first post'
-        post.text = 'my first psot'
+        post.text = 'this is [my first blog post](http://localhost:8000/)'
         post.pub_date = timezone.now()
         post.save()
 
@@ -126,7 +127,8 @@ class PostViewTest(LiveServerTestCase):
         self.assertEquals(r.status_code,200)
 
         self.assertTrue( post.title in r.content)
-        self.assertTrue( post.text in r.content)
         self.assertTrue( str(post.pub_date.year) in r.content)
         self.assertTrue( str(post.pub_date.day) in r.content)
 
+        #Check the link is makred down properly
+        self.assertTrue('<a href="http://localhost:8000/">my first blog post</a>' in r.content)
