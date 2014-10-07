@@ -14,6 +14,7 @@ class PostTest(TestCase):
         post.text = text
         post.pub_date = pub_date
         post.title = title
+        post.slug = 'first-post'
         post.save()
 
         posts = Post.objects.all()
@@ -58,7 +59,8 @@ class AdminTest(LiveServerTestCase):
             'title':'My first Post',
             'text' :'this is my first post text',
             'pub_date_0':'2014-10-07',
-            'pub_date_1':'22:00:04'
+            'pub_date_1':'22:00:04',
+            'slug':'my-first-test',
         },
         follow=True)
 
@@ -83,7 +85,8 @@ class AdminTest(LiveServerTestCase):
             'title':'my second post',
             'text':'this is my second post',
             'pub_date_0':'2014-10-9',
-            'pub_date_1':'22:00:04'
+            'pub_date_1':'22:00:04',
+            'slug':'my-first-test',
         },follow=True)
 
         self.assertEquals(response.status_code,200)
@@ -132,3 +135,26 @@ class PostViewTest(LiveServerTestCase):
 
         #Check the link is makred down properly
         self.assertTrue('<a href="http://localhost:8000/">my first blog post</a>' in r.content)
+
+    def test_post_page(self):
+        post = Post()
+        post.title = 'my first page'
+        post.text = 'This is my [first blog post](http://localhost:8000/)'
+        post.pub_date = timezone.now()
+        post.slug = 'my-first-post'
+        post.save()
+
+        self.assertEquals(len(Post.objects.all()),1)
+        self.assertEqual(Post.objects.all()[0],post)
+
+        p = Post.objects.all()[0]
+        p_url = p.get_absolute_url()
+
+        r = self.client.get(p_url)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue(post.title in r.content)
+        self.assertTrue(markdown.markdown(post.text) in r.content)
+        self.assertTrue( str(post.pub_date.year) in r.content)
+        self.assertTrue( str(post.pub_date.day) in r.content)
+        self.assertTrue( '<a href="http://localhost:8000/">first blog post</a>' in r.content)
+

@@ -17,8 +17,10 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=200)),
                 ('pub_date', models.DateTimeField()),
                 ('text', models.TextField()),
+                ('slug', models.SlugField(unique=True, max_length=20)),
             ],
             options={
+                'ordering': ['-pub_date'],
             },
             bases=(models.Model,),
         ),
