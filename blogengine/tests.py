@@ -1,4 +1,4 @@
-import markdown
+import markdown, feedparser
 from django.test import TestCase, LiveServerTestCase, Client
 from django.utils import timezone
 from django.contrib.flatpages.models import FlatPage
@@ -521,5 +521,41 @@ class FlatPageViewTest(BaseAcceptanceTest):
         self.assertTrue(page.title in r.content)
         self.assertTrue(page.content in r.content)
 
+class FeedTest(BaseAcceptanceTest):
+    def test_all_post_feed(self):
+        cat = Category()
+        cat.name = 'python'
+        cat.description = 'python'
+        cat.save()
 
+        tag = Tag()
+        tag.name = 'python'
+        tag.description = 'python'
+        tag.save()
 
+        author = User.objects.create_user('example','example@mail.com','password')
+        author.save()
+
+        post = Post()
+        post.title = 'first post'
+        post.text = 'first post text'
+        post.slug = 'first-text'
+        post.pub_date = timezone.now()
+        post.author = author
+        post.category = cat
+        post.save()
+
+        post.tags.add(tag)
+        post.save()
+
+        self.assertEquals(len(Post.objects.all()),1)
+        self.assertEquals(Post.objects.all()[0],post)
+
+        r = self.client.get('/feeds/posts/')
+        self.assertEqual(r.status_code,200)
+
+        feed = feedparser.parse(r.content)
+        self.assertEqual(len(feed.entries),1)
+
+        self.assertEquals(feed.entries[0].title,post.title)
+        self.assertEquals(feed.entries[0].description,post.text)
