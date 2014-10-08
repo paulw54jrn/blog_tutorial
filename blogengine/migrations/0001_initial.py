@@ -18,8 +18,10 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=200)),
                 ('description', models.TextField()),
+                ('slug', models.SlugField(max_length=40, unique=True, null=True, blank=True)),
             ],
             options={
+                'verbose_name_plural': 'categories',
             },
             bases=(models.Model,),
         ),

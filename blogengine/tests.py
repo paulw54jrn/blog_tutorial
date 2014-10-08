@@ -257,6 +257,7 @@ class PostViewTest(BaseAcceptanceTest):
         r = self.client.get('/')
         self.assertEquals(r.status_code,200)
 
+        self.assertTrue( post.category.name in r.content)
         self.assertTrue( post.title in r.content)
         self.assertTrue( str(post.pub_date.year) in r.content)
         self.assertTrue( str(post.pub_date.day) in r.content)
@@ -294,10 +295,43 @@ class PostViewTest(BaseAcceptanceTest):
         r = self.client.get(p_url)
         self.assertEquals(r.status_code,200)
         self.assertTrue(post.title in r.content)
+        self.assertTrue(post.category.name in r.content)
         self.assertTrue(markdown.markdown(post.text) in r.content)
         self.assertTrue( str(post.pub_date.year) in r.content)
         self.assertTrue( str(post.pub_date.day) in r.content)
         self.assertTrue( '<a href="http://localhost:8000/">first blog post</a>' in r.content)
+
+    def test_categor_page(self):
+        #create category
+        cat = Category()
+        cat.name = 'python'
+        cat.description = 'python'
+        cat.save()
+
+        author = User.objects.create_user('testuser','user@example.com','password')
+        author.save()
+
+        post = Post()
+        post.title = 'first post'
+        post.text = 'text'
+        post.slug = 'first-post'
+        post.pub_date = timezone.now()
+        post.author = author
+        post.category = cat
+        post.save()
+
+        self.assertEquals(Post.objects.all()[0],post)
+        self.assertEquals(len(Post.objects.all()),1)
+
+        cat_url = post.category.get_absolute_url()
+
+        r = self.client.get(cat_url)
+        self.assertEquals(r.status_code,200)
+
+        self.assertTrue( post.category.name in r.content )
+        self.assertTrue( markdown.markdown(post.text) in r.content)
+
+
 
 class FlatPageViewTest(BaseAcceptanceTest):
 
