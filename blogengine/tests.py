@@ -354,6 +354,11 @@ class PostViewTest(BaseAcceptanceTest):
         category.descritption = 'python'
         category.save()
 
+        #create tag
+        tag = Tag()
+        tag.name = 'perl'
+        tag.description = 'perl'
+        tag.save()
 
         author = User.objects.create_user('test','test@test.com','test')
         author.save()
@@ -366,13 +371,18 @@ class PostViewTest(BaseAcceptanceTest):
         post.category = category
         post.save()
 
+        post.tags.add(tag)
+        post.save()
+
         self.assertEqual(len(Post.objects.all()),1)
 
         r = self.client.get('/')
         self.assertEquals(r.status_code,200)
 
         self.assertTrue( post.category.name in r.content)
+        self.assertTrue( Tag.objects.all()[0].name in r.content)
         self.assertTrue( post.title in r.content)
+        self.assertTrue( markdown.markdown(post.text) in r.content)
         self.assertTrue( str(post.pub_date.year) in r.content)
         self.assertTrue( str(post.pub_date.day) in r.content)
 
@@ -386,10 +396,15 @@ class PostViewTest(BaseAcceptanceTest):
         category.descritption = 'python'
         category.save()
 
+        #tag
+        tag = Tag()
+        tag.name = 'python'
+        tag.description = 'not perl'
+        tag.save()
+
         #create author
         author = User.objects.create_user('adsf','asdf@adf.com','asdf')
         author.save()
-
 
         post = Post()
         post.title = 'my first page'
@@ -398,6 +413,9 @@ class PostViewTest(BaseAcceptanceTest):
         post.slug = 'my-first-post'
         post.author = author
         post.category = category
+        post.save()
+
+        post.tags.add(tag)
         post.save()
 
         self.assertEquals(len(Post.objects.all()),1)
@@ -413,7 +431,36 @@ class PostViewTest(BaseAcceptanceTest):
         self.assertTrue(markdown.markdown(post.text) in r.content)
         self.assertTrue( str(post.pub_date.year) in r.content)
         self.assertTrue( str(post.pub_date.day) in r.content)
+        self.assertTrue(tag.name in r.content)
         self.assertTrue( '<a href="http://localhost:8000/">first blog post</a>' in r.content)
+
+    def test_tag_page(self):
+        tag = Tag()
+        tag.name = 'python'
+        tag.description = 'python'
+        tag.save()
+
+        author = User.objects.create_user('testuser','user@example.com','password')
+        author.save()
+
+        post = Post()
+        post.title = 'first post'
+        post.text = 'fir post'
+        post.slug = 'first-post'
+        post.pub_date = timezone.now()
+        post.author = author
+        post.save()
+        post.tags.add(tag)
+        post.save()
+
+        self.assertEquals(len(Post.objects.all()),1)
+        self.assertEquals(Post.objects.all()[0],post)
+
+        r = self.client.get(post.tags.all()[0].get_absolute_url(),follow=True)
+        self.assertEquals(r.status_code,200)
+        self.assertTrue(tag.name in r.content)
+        self.assertTrue(markdown.markdown(post.text) in  r.content)
+
 
     def test_category_page(self):
         #create category

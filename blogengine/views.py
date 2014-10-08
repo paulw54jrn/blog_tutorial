@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import ListView
-from blogengine.models import Post, Category
+from blogengine.models import Post, Category, Tag
 
 class CategoryListView(ListView):
 
@@ -14,3 +14,12 @@ class CategoryListView(ListView):
 
 
 
+class TagListView(ListView):
+
+    def get_queryset(self):
+        slug = self.kwargs['slug']
+        try:
+            tag = Tag.objects.get(slug=slug)
+            return tag.post_set.all()
+        except Tag.DoesNotExist:
+            return Post.objects.none()
